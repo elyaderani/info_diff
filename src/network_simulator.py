@@ -19,7 +19,8 @@ simulation_params = {
     'gamma': 2,
     'delta': 0.5,
     'k': 4,  # number of immediate neighbors
-    'p': 0.32/10,  # re-wiring probability
+    'p': 0.32,  # re-wiring probability
+    'p_erdos_renyi': 0.032,  # probability of edge creation
     'epsilon': 1e-3,  # threshold for early stopping
     'convergence_period': 10,  # number of rounds to wait for convergence
     'seed_val': 1,  # seed for reproducibility 
@@ -41,7 +42,7 @@ console.setFormatter(formatter)
 logging.getLogger('').addHandler(console)
 
 
-def create_network(network_type: str, n: int, k: int, p: float, seed: Optional[int]) -> nx.Graph:
+def create_network(network_type: str, n: int, k: int, p: float, p_erdos_renyi: float, seed: Optional[int]) -> nx.Graph:
     """Create a network of type 'network_type' with 'n' nodes and 'k' neighbors."""
     if seed:
         np.random.seed(seed)
@@ -50,7 +51,7 @@ def create_network(network_type: str, n: int, k: int, p: float, seed: Optional[i
     elif network_type == 'barabasi_albert':
         G = nx.barabasi_albert_graph(n, k)
     elif network_type == 'erdos_renyi':
-        G = nx.erdos_renyi_graph(n, p)
+        G = nx.erdos_renyi_graph(n, p_erdos_renyi)
     elif network_type == 'watts_strogatz':
         G = nx.watts_strogatz_graph(n, k, p)
     else:
@@ -151,7 +152,7 @@ def draw_evolution(steps: Iterable, beliefs_over_time: np.array, title: str, dir
     plt.close()
 
 
-def run_simulation(network_type: str, N: int, T: int, gamma:float, delta: float, k: int, p: float, epsilon: float, convergence_period: int, seed_val: int, timestamp: str) -> List[List[float]]:
+def run_simulation(network_type: str, N: int, T: int, gamma:float, delta: float, k: int, p: float, p_erdos_renyi: float, epsilon: float, convergence_period: int, seed_val: int, timestamp: str) -> List[List[float]]:
     """
     Run the simulation for the given network type.
 
@@ -171,6 +172,8 @@ def run_simulation(network_type: str, N: int, T: int, gamma:float, delta: float,
         The number of neighbors.
     p: float
         The re-wiring probability.
+    p_erdos_renyi: float
+        The probability of edge creation in the Erdos-Renyi model.
     epsilon: float
         The threshold for early stopping.
     convergence_period: int
@@ -182,7 +185,7 @@ def run_simulation(network_type: str, N: int, T: int, gamma:float, delta: float,
     """
     np.random.seed(seed_val)
     # create graph
-    G = create_network(network_type, N, k, p, seed_val)
+    G = create_network(network_type, N, k, p, p_erdos_renyi,seed_val)
     for i in range(G.number_of_nodes()):
         G.nodes[i]['type'] = np.random.beta(.5, .5) #np.random.uniform() #
     # initialize beliefs, TODO: check if this is neccesary
